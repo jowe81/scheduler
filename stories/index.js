@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Fragment } from "react";
 
 import { storiesOf } from "@storybook/react";
 import { action } from "@storybook/addon-actions";
@@ -17,6 +17,7 @@ import Show from "components/Appointment/Show";
 import Confirm from "components/Appointment/Confirm";
 import Status from "components/Appointment/Status";
 import Error from "components/Appointment/Error";
+import Form from "components/Appointment/Form";
 
 storiesOf("Button", module)
   .addParameters({
@@ -144,65 +145,100 @@ storiesOf("InterviewerList", module)
     />
   ));
 
-  storiesOf("Appointment", module)
-    .addParameters({
-      backgrounds: [{ name: "white", value: "#fff", default: true }]
-    })
-    .add("Appointment", () => {
-      return (<Appointment />);
-    })
-    .add("with time", () => {
-      return (<Appointment time="12pm" />);
-    })
-    .add("Header", () => {
-      const props = {
-        time: "12pm"
-      };
-      return (
-        <Header {...props}>
-        </Header>
-      );
-    })
-    .add("Empty", () => {
-      return (
-        <Empty onAdd={action("onAdd")}></Empty>
-      );
-    })
-    .add("Show", () => {
-      return (
-        <Show
-          student="Caroline Baker"
-          interviewer={interviewers[0]}
-          onEdit={action("onEdit")}
-          onDelete={action("onDelete")}
-        >
-        </Show>
-      );
-    })
-    .add("Confirm", () => {
-      return (
-        <Confirm
-          message="Delete this appointment?"
-          onConfirm={action("onConfirm")}
-          onCancel={action("onCancel")}
-        >          
-        </Confirm>
-      );
-    })
-    .add("Status", () => {
-      return (
-        <Status message="Deleting" />
-      )
-    })
-    .add("Error", () => {
-      return (
-        <Error 
-          message="Could not delete this appointment"
-          onClose={action("onClose")}
-        >
-        </Error>
-      )
-    });
-
-
-    
+storiesOf("Appointment", module)
+  .addParameters({
+    backgrounds: [{ name: "white", value: "#fff", default: true }]
+  })
+  .add("Appointment", () => {
+    return (<Appointment />);
+  })
+  .add("with time", () => {
+    return (<Appointment time="12pm" />);
+  })
+  .add("Header", () => {
+    const props = {
+      time: "12pm"
+    };
+    return (
+      <Header {...props}>
+      </Header>
+    );
+  })
+  .add("Empty", () => {
+    return (
+      <Empty onAdd={action("onAdd")}></Empty>
+    );
+  })
+  .add("Show", () => {
+    return (
+      <Show
+        student="Caroline Baker"
+        interviewer={interviewers[0]}
+        onEdit={action("onEdit")}
+        onDelete={action("onDelete")}
+      >
+      </Show>
+    );
+  })
+  .add("Confirm", () => {
+    return (
+      <Confirm
+        message="Delete this appointment?"
+        onConfirm={action("onConfirm")}
+        onCancel={action("onCancel")}
+      >          
+      </Confirm>
+    );
+  })
+  .add("Status", () => {
+    return (
+      <Status message="Deleting" />
+    )
+  })
+  .add("Error", () => {
+    return (
+      <Error 
+        message="Could not delete this appointment"
+        onClose={action("onClose")}
+      >
+      </Error>
+    )
+  })
+  .add("Create", () => {
+    return (
+      <Form
+        interviewers={interviewers}
+        onSave={action("onSave")}
+        onCancel={action("onCancel")}
+      >        
+      </Form>
+    )
+  })
+  .add("Edit", () => {
+    return (
+      <Form
+        student="Johannes Weber"
+        interviewer={3}
+        interviewers={interviewers}
+        onSave={action("onSave")}
+        onCancel={action("onCancel")}
+      >
+      </Form>
+    )
+  })
+  .add("Appointment Empty", () => (
+    <Fragment>
+      <Appointment id={1} time="4pm" />
+      <Appointment time="5pm" />
+    </Fragment>
+  ))
+  .add("Appointment Booked", () => (
+    <Fragment>
+      <Appointment
+        id={1}
+        time="4pm"
+        interview={{ student: "Lydia Miller-Jones", interviewer }}
+      />
+      <Appointment time="5pm" />
+    </Fragment>
+  ));
