@@ -11,6 +11,9 @@ import DayList from "components/DayList";
 import InterviewerListItem from "components/InterviewerListItem";
 import InterviewerList from "components/InterviewerList";
 import Appointment from "components/Appointment";
+import Header from "components/Appointment/Header";
+import Empty from "components/Appointment/Empty";
+import Show from "components/Appointment/Show";
 
 storiesOf("Button", module)
   .addParameters({
@@ -148,3 +151,30 @@ storiesOf("InterviewerList", module)
     .add("with time", () => {
       return (<Appointment time="12pm" />);
     })
+    .add("Header", () => {
+      const props = {
+        time: "12pm"
+      };
+      return (
+        <Header {...props}>
+        </Header>
+      );
+    })
+    .add("Empty", () => {
+      return (
+        <Empty onAdd={action("onAdd")}></Empty>
+      );
+    })
+    .add("Show", () => {
+      return (
+        <Show
+          student="Caroline Baker"
+          interviewer={interviewers[0]}
+          onEdit={action("onEdit")}
+          onDelete={action("onDelete")}
+        >
+        </Show>
+      );
+    });
+
+    
