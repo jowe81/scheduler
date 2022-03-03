@@ -1,11 +1,12 @@
 const getAppointmentsForDay = (state, day) => {
+
   //Get the day object for the name passed in day
   const targetDay = state.days.find(d => {
     if (d.name === day) {
-      return d.appointments;      
+      return [ ...d.appointments ]; //really important to make a new array here!
     }
   });
-
+  
   if (targetDay) {
     //Retrieve an array of appointmentIds from the day object
     const appointmentIds = targetDay.appointments;
