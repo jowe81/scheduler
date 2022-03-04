@@ -57,14 +57,12 @@ export default function Application(props) {
         .then(response => {
           if (response.status === 204) {
             setState(updatedState);
-            console.log("Resolving promise");
             resolve();  
-          } else reject();
+          } else { 
+            reject(new Error(`Invalid response received from API. Expected 204 and received ${response.status}.`));
+          }
         })
-        .catch(err => {
-          console.log("Rejecting", err);
-          reject(err);
-        });
+        .catch(reject);
     });
   }
 
