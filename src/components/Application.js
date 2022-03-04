@@ -76,7 +76,38 @@ export default function Application(props) {
    * @param {Integer} id the ide of the appointment slot to cancel the interview for
    * @returns a promise to the completed API call
    */
-  const cancelInterview = id => axios.delete(`/api/appointments/${id}`);
+  const cancelInterview = id => {
+    return new Promise((resolve, reject) => {
+
+      const updatedAppointment = {
+        ...state.appointments[id],
+        interview: null,
+      }
+  
+      const updatedAppointments = {
+        ...state.appointments,
+        [id]: updatedAppointment,
+      }
+  
+      const updatedState = {
+        ...state,
+        appointments: { ...updatedAppointments },
+      }
+  
+      axios
+        .delete(`/api/appointments/${id}`)
+        .then(response => {
+          if (response.status === 204) {
+            setState(updatedState);
+            resolve();  
+          } else {
+            reject(new Error(`Invalid response received from API. Expected 204 and received ${response.status}.`));
+          }
+        })
+        .catch(reject);
+  
+    });
+  };
   
   const schedule = dailyAppointments.map(appointment => {
     const interview = getInterview(state, appointment.interview);
