@@ -17,6 +17,7 @@ const Appointment = (props) => {
   const SAVING = "Booking interview";
   const CANCELING = "Canceling interview";
   const CONFIRM = "CONFIRM";
+  const EDIT = "EDIT";
 
   const { mode, transition, back } = useVisualMode(props.interview ? SHOW : EMPTY);
 
@@ -42,6 +43,8 @@ const Appointment = (props) => {
       .catch(err => console.log(`API call failed on delete: ${err}`));
   }
 
+  const enterEditMode = () => transition(EDIT);
+
   return (
     <article className="appointment">
       <Header time={props.time}/>
@@ -50,7 +53,8 @@ const Appointment = (props) => {
         <Show
           student={props.interview.student}
           interviewer={props.interview.interviewer}
-          onDelete={confirmCancellation}          
+          onDelete={confirmCancellation}  
+          onEdit={enterEditMode}        
         />
       )}
       {mode === CREATE && 
@@ -70,6 +74,15 @@ const Appointment = (props) => {
           message = {"Do you really want to cancel this interview?"}
           onConfirm={cancelInterview}
           onCancel={back}
+        />
+      }
+      {mode === EDIT &&
+        <Form
+          interviewers={props.interviewers}
+          student={props.interview.student}
+          interviewer={props.interview.interviewer.id}
+          onCancel={back}
+          onSave={save}
         />
       }
     </article>
