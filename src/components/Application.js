@@ -35,24 +35,37 @@ export default function Application(props) {
 
 
   const bookInterview = (id, interview) => {
-    console.log(id, interview);
+    return new Promise ((resolve, reject) => {      
 
-    const appointment = {
-      ...state.appointments[id],
-      interview: { ...interview }
-    };
-
-    const appointments = {
-      ...state.appointments,
-      [id]: appointment
-    }
-
-    const updatedState = {
-      ...state,
-      appointments
-    }
-
-    setState(updatedState);
+      const appointment = {
+        ...state.appointments[id],
+        interview: { ...interview }
+      };
+  
+      const appointments = {
+        ...state.appointments,
+        [id]: appointment
+      }
+  
+      const updatedState = {
+        ...state,
+        appointments
+      }
+  
+      axios
+        .put(`/api/appointments/${id}`, { interview })
+        .then(response => {
+          if (response.status === 204) {
+            setState(updatedState);
+            console.log("Resolving promise");
+            resolve();  
+          } else reject();
+        })
+        .catch(err => {
+          console.log("Rejecting", err);
+          reject(err);
+        });
+    });
   }
 
   const schedule = dailyAppointments.map(appointment => {

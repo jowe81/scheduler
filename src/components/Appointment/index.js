@@ -20,8 +20,14 @@ const Appointment = (props) => {
       student: name,
       interviewer
     };
-    props.bookInterview(props.id, interview);
-    transition(SHOW);
+    props.bookInterview(props.id, interview)
+      .then(() => {
+        console.log("Promise resolved");
+        transition(SHOW);
+      })
+      .catch(err => {
+        console.log(`API call failed: ${err}`);
+      });
   }
 
   return (
