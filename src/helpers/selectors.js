@@ -1,11 +1,7 @@
 const getAppointmentsForDay = (state, day) => {
 
   //Get the day object for the name passed in day
-  const targetDay = state.days.find(d => {
-    if (d.name === day) {
-      return [ ...d.appointments ]; //really important to make a new array here!
-    }
-  });
+  const targetDay = state.days.find(d => d.name === day);
   
   if (targetDay) {
     //Retrieve an array of appointmentIds from the day object
@@ -15,9 +11,7 @@ const getAppointmentsForDay = (state, day) => {
     const allAppointmentsArray = Object.values(state.appointments);
 
     //Get the appointments whose ID is in appointmentIds
-    const appointments = allAppointmentsArray.filter(appointment => {
-      return appointmentIds.includes(appointment.id);
-    });
+    const appointments = allAppointmentsArray.filter(appointment => appointmentIds.includes(appointment.id));
 
     return appointments;
   }
@@ -27,15 +21,23 @@ const getAppointmentsForDay = (state, day) => {
 };
 
 const getInterviewersForDay = (state, day) => {
-  const appointments = getAppointmentsForDay(state, day);
-
-  //Get only those appointments that have bookings
-  const appointmentsWithBookings = appointments.filter(appointment => appointment.interview);
-
-  //Get the interviewer data for the interviewer Ids stored in the booked appointments
-  const interviewers = appointmentsWithBookings.map(appointment => state.interviewers[appointment.interview.interviewer]);
+  //Get the day object for the name passed in day
+  const targetDay = state.days.find(d => d.name === day);
   
-  return interviewers;  
+  if (targetDay) {
+    //Get an array with interviewer ids for the day
+    const interviewerIds = [ ...targetDay.interviewers ];
+
+    //Get an array of all interviewers
+    const allInterviewersArray = Object.values(state.interviewers);
+
+    //Filter the interviewers array to only include the interviewers for the day
+    const interviewers = allInterviewersArray.filter((interviewer) => interviewerIds.includes(interviewer.id));
+
+    return interviewers;
+  }
+
+  return [];  
 };
 
 const getInterview = (state, interview) => {
