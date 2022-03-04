@@ -5,6 +5,7 @@ import Show from "./Show";
 import Empty from "./Empty";
 import Form from "./Form";
 import useVisualMode from "hooks/useVisualMode";
+import Status from "./Status";
 
 
 const Appointment = (props) => {
@@ -12,22 +13,19 @@ const Appointment = (props) => {
   const EMPTY = "EMPTY";
   const SHOW = "SHOW";
   const CREATE = "CREATE";
+  const SAVING = "SAVING";
 
   const { mode, transition, back } = useVisualMode(props.interview ? SHOW : EMPTY);
 
   const save = (name, interviewer) => {
+    transition(SAVING);
     const interview = {
       student: name,
       interviewer
     };
     props.bookInterview(props.id, interview)
-      .then(() => {
-        console.log("Promise resolved");
-        transition(SHOW);
-      })
-      .catch(err => {
-        console.log(`API call failed: ${err}`);
-      });
+      .then(() => transition(SHOW))
+      .catch(err => console.log(`API call failed: ${err}`));
   }
 
   return (
@@ -45,6 +43,11 @@ const Appointment = (props) => {
           interviewers = {props.interviewers}
           onCancel = {back}
           onSave = {save}
+        />
+      }
+      {mode === SAVING &&
+        <Status
+          message = "Saving"
         />
       }
     </article>
