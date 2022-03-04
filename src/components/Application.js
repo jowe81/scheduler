@@ -1,114 +1,32 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import React from "react";
 import "components/Application.scss";
 import DayList from "components/DayList";
 import Appointment from "components/Appointment";
 import { getAppointmentsForDay, getInterviewersForDay, getInterview } from "helpers/selectors";
+import useApplicationData from "hooks/useApplicationData";
 
 export default function Application(props) {
 
-  const [state, setState] = useState({
-    day: "Monday",
-    days: [],
-    appointments: {}
-  });
+  /**
+   * Custom hook useApplicationData manages state management & API calls
+   */
+  const { 
+    state,
+    setDay,
+    bookInterview,
+    cancelInterview,
+  } = useApplicationData();
 
-  const setDay = (day) => setState({...state, day});
-
+  /**
+   * Use selector functions to distill properly formatted appointment/interviewer
+   * data from the application state
+   */
   const dailyAppointments = getAppointmentsForDay(state, state.day);
   const interviewers = getInterviewersForDay(state, state.day);
-
-  useEffect(() => {
-
-    Promise.all([
-      axios.get(`/api/days`),
-      axios.get(`/api/appointments`),
-      axios.get(`/api/interviewers`)
-    ]).then(all => {
-      const days = all[0].data;
-      const appointments = all[1].data;
-      const interviewers = all[2].data;
-      setState(prev => ({ ...prev, days, appointments, interviewers }));
-    });
-
-  }, []);
-
+  
   /**
-   * Makes an API call to book an interviewer
-   * @param {Integer} id the id of the appointment to book the interview for
-   * @param {Object} interview the new interview object (with student name and interviewer id)
-   * @returns a promise to the completed API call
+   * Get an array of Appointment components from the appointment data for the day
    */
-  const bookInterview = (id, interview) => {
-    return new Promise ((resolve, reject) => {      
-
-      const appointment = {
-        ...state.appointments[id],
-        interview: { ...interview }
-      };
-  
-      const appointments = {
-        ...state.appointments,
-        [id]: appointment
-      }
-  
-      const updatedState = {
-        ...state,
-        appointments
-      }
-  
-      axios
-        .put(`/api/appointments/${id}`, { interview })
-        .then(response => {
-          if (response.status === 204) {
-            setState(updatedState);
-            resolve();  
-          } else { 
-            reject(new Error(`Invalid response received from API. Expected 204 and received ${response.status}.`));
-          }
-        })
-        .catch(reject);
-    });
-  }
-
-  /**
-   * Makes an API call do cancel an interview for a given appointment slot
-   * @param {Integer} id the ide of the appointment slot to cancel the interview for
-   * @returns a promise to the completed API call
-   */
-  const cancelInterview = id => {
-    return new Promise((resolve, reject) => {
-
-      const updatedAppointment = {
-        ...state.appointments[id],
-        interview: null,
-      }
-  
-      const updatedAppointments = {
-        ...state.appointments,
-        [id]: updatedAppointment,
-      }
-  
-      const updatedState = {
-        ...state,
-        appointments: { ...updatedAppointments },
-      }
-  
-      axios
-        .delete(`/api/appointments/${id}`)
-        .then(response => {
-          if (response.status === 204) {
-            setState(updatedState);
-            resolve();  
-          } else {
-            reject(new Error(`Invalid response received from API. Expected 204 and received ${response.status}.`));
-          }
-        })
-        .catch(reject);
-  
-    });
-  };
-  
   const schedule = dailyAppointments.map(appointment => {
     const interview = getInterview(state, appointment.interview);
 
