@@ -6,6 +6,7 @@ import Empty from "./Empty";
 import Form from "./Form";
 import useVisualMode from "hooks/useVisualMode";
 import Status from "./Status";
+import Confirm from "./Confirm";
 
 
 const Appointment = (props) => {
@@ -15,6 +16,7 @@ const Appointment = (props) => {
   const CREATE = "CREATE";
   const SAVING = "Booking interview";
   const CANCELING = "Canceling interview";
+  const CONFIRM = "CONFIRM";
 
   const { mode, transition, back } = useVisualMode(props.interview ? SHOW : EMPTY);
 
@@ -27,6 +29,10 @@ const Appointment = (props) => {
     props.bookInterview(props.id, interview)
       .then(() => transition(SHOW))
       .catch(err => console.log(`API call failed on save: ${err}`));
+  }
+
+  const confirmCancellation = () => {
+    transition(CONFIRM);
   }
 
   const cancelInterview = () => {
@@ -44,7 +50,7 @@ const Appointment = (props) => {
         <Show
           student={props.interview.student}
           interviewer={props.interview.interviewer}
-          onDelete={cancelInterview}
+          onDelete={confirmCancellation}          
         />
       )}
       {mode === CREATE && 
@@ -57,6 +63,13 @@ const Appointment = (props) => {
       {(mode === SAVING || mode === CANCELING) &&
         <Status
           message = { mode }
+        />
+      }
+      {mode === CONFIRM &&
+        <Confirm
+          message = {"Do you really want to cancel this interview?"}
+          onConfirm={cancelInterview}
+          onCancel={back}
         />
       }
     </article>
