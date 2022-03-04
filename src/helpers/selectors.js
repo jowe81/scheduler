@@ -26,6 +26,36 @@ const getAppointmentsForDay = (state, day) => {
   return [];
 };
 
+const getInterviewersForDay = (state, day) => {
+  const appointments = getAppointmentsForDay(state, day);
+
+  //Get only those appointments that have bookings
+  const appointmentsWithBookings = appointments.filter(appointment => appointment.interview);
+
+  //Get the interviewer data for the interviewer Ids stored in the booked appointments
+  const interviewers = appointmentsWithBookings.map(appointment => state.interviewers[appointment.interview.interviewer]);
+  
+  return interviewers;  
+};
+
+const getInterview = (state, interview) => {
+
+  //Get Id of interviewer we're looking for, if one is booked
+  const interviewerId = interview && interview.interviewer;
+
+  if (interviewerId) {
+    const interviewerData = state.interviewers[interviewerId];
+    const fullInterviewData = {
+      ...interview,
+      interviewer: { ...interviewerData}
+    }
+    return fullInterviewData;
+  }
+  return null;
+}
+
 export {
-  getAppointmentsForDay
+  getAppointmentsForDay,
+  getInterview,
+  getInterviewersForDay
 };
