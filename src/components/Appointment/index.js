@@ -7,6 +7,7 @@ import Form from "./Form";
 import useVisualMode from "hooks/useVisualMode";
 import Status from "./Status";
 import Confirm from "./Confirm";
+import Error from "./Error";
 
 
 const Appointment = (props) => {
@@ -18,6 +19,8 @@ const Appointment = (props) => {
   const CANCELING = "Canceling interview";
   const CONFIRM = "CONFIRM";
   const EDIT = "EDIT";
+  const ERROR_SAVE = "An error occurred while trying to save the appointment data.";
+  const ERROR_DELETE = "An error occurred while trying to cancel the appointment.";
 
   const { mode, transition, back } = useVisualMode(props.interview ? SHOW : EMPTY);
 
@@ -29,7 +32,10 @@ const Appointment = (props) => {
     };
     props.bookInterview(props.id, interview)
       .then(() => transition(SHOW))
-      .catch(err => console.log(`API call failed on save: ${err}`));
+      .catch(err => {
+        transition(ERROR_SAVE);
+        console.log(`API call failed on save: ${err}`);
+      });
   }
 
   const confirmCancellation = () => {
@@ -40,7 +46,10 @@ const Appointment = (props) => {
     transition(CANCELING);
     props.cancelInterview(props.id)
       .then(() => transition(EMPTY))
-      .catch(err => console.log(`API call failed on delete: ${err}`));
+      .catch(err => {
+        transition(ERROR_DELETE);
+        console.log(`API call failed on delete: ${err}`);
+      });
   }
 
   const enterEditMode = () => transition(EDIT);
@@ -83,6 +92,12 @@ const Appointment = (props) => {
           interviewer={props.interview.interviewer.id}
           onCancel={back}
           onSave={save}
+        />
+      }
+      {(mode === ERROR_SAVE || mode === ERROR_DELETE) &&
+        <Error
+          message={mode}
+          onClose={back}
         />
       }
     </article>
