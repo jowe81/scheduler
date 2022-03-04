@@ -33,7 +33,7 @@ const Appointment = (props) => {
     props.bookInterview(props.id, interview)
       .then(() => transition(SHOW))
       .catch(err => {
-        transition(ERROR_SAVE);
+        transition(ERROR_SAVE, true);
         console.log(`API call failed on save: ${err}`);
       });
   }
@@ -43,11 +43,11 @@ const Appointment = (props) => {
   }
 
   const cancelInterview = () => {
-    transition(CANCELING);
+    transition(CANCELING, true);
     props.cancelInterview(props.id)
       .then(() => transition(EMPTY))
       .catch(err => {
-        transition(ERROR_DELETE);
+        transition(ERROR_DELETE, true);
         console.log(`API call failed on delete: ${err}`);
       });
   }
