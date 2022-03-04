@@ -13,7 +13,8 @@ const Appointment = (props) => {
   const EMPTY = "EMPTY";
   const SHOW = "SHOW";
   const CREATE = "CREATE";
-  const SAVING = "SAVING";
+  const SAVING = "Booking interview";
+  const CANCELING = "Canceling interview";
 
   const { mode, transition, back } = useVisualMode(props.interview ? SHOW : EMPTY);
 
@@ -25,7 +26,14 @@ const Appointment = (props) => {
     };
     props.bookInterview(props.id, interview)
       .then(() => transition(SHOW))
-      .catch(err => console.log(`API call failed: ${err}`));
+      .catch(err => console.log(`API call failed on save: ${err}`));
+  }
+
+  const cancelInterview = () => {
+    transition(CANCELING);
+    props.cancelInterview(props.id)
+      .then(() => transition(EMPTY))
+      .catch(err => console.log(`API call failed on delete: ${err}`));
   }
 
   return (
@@ -36,6 +44,7 @@ const Appointment = (props) => {
         <Show
           student={props.interview.student}
           interviewer={props.interview.interviewer}
+          onDelete={cancelInterview}
         />
       )}
       {mode === CREATE && 
@@ -45,9 +54,9 @@ const Appointment = (props) => {
           onSave = {save}
         />
       }
-      {mode === SAVING &&
+      {(mode === SAVING || mode === CANCELING) &&
         <Status
-          message = "Saving"
+          message = { mode }
         />
       }
     </article>

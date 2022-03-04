@@ -33,7 +33,12 @@ export default function Application(props) {
 
   }, []);
 
-
+  /**
+   * Makes an API call to book an interviewer
+   * @param {Integer} id the id of the appointment to book the interview for
+   * @param {Object} interview the new interview object (with student name and interviewer id)
+   * @returns a promise to the completed API call
+   */
   const bookInterview = (id, interview) => {
     return new Promise ((resolve, reject) => {      
 
@@ -66,6 +71,13 @@ export default function Application(props) {
     });
   }
 
+  /**
+   * Makes an API call do cancel an interview for a given appointment slot
+   * @param {Integer} id the ide of the appointment slot to cancel the interview for
+   * @returns a promise to the completed API call
+   */
+  const cancelInterview = id => axios.delete(`/api/appointments/${id}`);
+  
   const schedule = dailyAppointments.map(appointment => {
     const interview = getInterview(state, appointment.interview);
 
@@ -77,6 +89,7 @@ export default function Application(props) {
         interview={interview}
         interviewers={interviewers}
         bookInterview={bookInterview}
+        cancelInterview={cancelInterview}
       />
     );
   })
