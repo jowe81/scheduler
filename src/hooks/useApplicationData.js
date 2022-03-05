@@ -9,11 +9,14 @@ export default function useApplicationData() {
     appointments: {}
   });
 
-  const synchronizeAppointment = (id, interview, day) => setState(prev => {
-
-    /**
-     * Update the spot count for the day
-     * */ 
+  /**
+   * Clone the days data and update spot count according to passed interview data
+   * @param {integer} appointmentId 
+   * @param {object | null} interview Interview object or null
+   * @param {object} prev Previous state 
+   * @returns a clone of prev.days, with updated spot count for day
+   */
+  const updateDays = (appointmentId, interview, prev) => {
 
     //Clone the prev.days array to updatedDays
     const updatedDays = prev.days.map(day => {
@@ -26,7 +29,7 @@ export default function useApplicationData() {
 
     //Determine whether and how spot count needs to change
     let increment = 0;
-    const interviewExisted = prev.appointments[id].interview !== null;
+    const interviewExisted = prev.appointments[appointmentId].interview !== null;
     if (interview !== null && !interviewExisted) {
       //Book and interview in a previously empty spot: subtract a spot
       increment = -1;
@@ -35,39 +38,51 @@ export default function useApplicationData() {
       increment = +1;
     }
 
-    //Get the day object for the name passed in day
-    const targetDay = updatedDays.find(d => d.name === day);
+    //Get the day object
+    const targetDay = updatedDays.find(d => d.name === prev.day);
 
     //Apply new spot count directly (as targetDay is already a clone)
     targetDay.spots += increment;
     
+    return updatedDays;
+  }
 
-    /**
-     * Update the interview data for the appointment
-     */
-
+  /**
+   * Clone and update prev.appointments according to passed interview data
+   * @param {integer} appointmentId 
+   * @param {*} interview 
+   * @param {*} prev 
+   * @returns 
+   */
+  const updateAppointments = (appointmentId, interview, prev) => {
+    
     const updatedAppointment = {
-      ...prev.appointments[id],
+      ...prev.appointments[appointmentId],
       interview,
     }
 
     const updatedAppointments = {
       ...prev.appointments,
-      [id]: updatedAppointment,
+      [appointmentId]: updatedAppointment,
     }
 
-    /**
-     * Update state
-     */
+    return updatedAppointments;
+  }
 
+  /**
+   * Update app state for booked, changed, or canceled appointment
+   * @param {integer} id The appointment id 
+   * @param {object | null} interview the new interview data (or null) for the appointment
+   */
+  const synchronizeAppointment = (id, interview) => setState(prev => {
+    const updatedDays = updateDays(id, interview, prev);
+    const updatedAppointments = updateAppointments(id, interview, prev);
     const updatedState = {
       ...prev,
       appointments: updatedAppointments,
       days: updatedDays,
     }
-
     return updatedState;
-
   });
 
   /**
@@ -77,7 +92,6 @@ export default function useApplicationData() {
   const setDay = (day) => setState(prev => {
     return {...prev, day};
   });
-
   
   /**
    * Makes an API call to book an interviewer
@@ -91,7 +105,7 @@ export default function useApplicationData() {
         .put(`/api/appointments/${id}`, { interview })
         .then(response => {
           if (response.status === 204) {
-            synchronizeAppointment(id, interview, state.day);
+            synchronizeAppointment(id, interview);
             resolve();  
           } else { 
             reject(new Error(`Invalid response received from API. Expected 204 and received ${response.status}.`));
@@ -112,7 +126,7 @@ export default function useApplicationData() {
         .delete(`/api/appointments/${id}`)
         .then(response => {
           if (response.status === 204) {
-            synchronizeAppointment(id, null, state.day);
+            synchronizeAppointment(id, null);
             resolve();  
           } else {
             reject(new Error(`Invalid response received from API. Expected 204 and received ${response.status}.`));
@@ -124,7 +138,6 @@ export default function useApplicationData() {
 
   // Retrieve initial app data from API 
   useEffect(() => {
-
     Promise.all([
       axios.get(`/api/days`),
       axios.get(`/api/appointments`),
@@ -135,7 +148,6 @@ export default function useApplicationData() {
       const interviewers = all[2].data;
       setState(prev => ({ ...prev, days, appointments, interviewers }));
     });
-
   }, []);
 
 
