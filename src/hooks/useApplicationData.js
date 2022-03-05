@@ -9,20 +9,11 @@ export default function useApplicationData() {
     appointments: {}
   });
 
-  /**
-   * Changes the day string in the state so the view can show the given day
-   * @param {String} day the day to be shown (e.g. "Monday")
-   */
-  const setDay = (day) => setState(prev => {
-    return {...prev, day};
-  });
+  const synchronizeAppointment = (id, interview, day) => setState(prev => {
 
-  /**
-   * Updates the number of available spots for a given day
-   * @param {String} day the name of the day (e.g. "Monday")
-   * @param {Integer} increment the # of spots to be added or subtracted
-   */
-  const adjustSpots = (day, increment) => setState(prev => {
+    /**
+     * Update the spot count for the day
+     * */ 
 
     //Clone the prev.days array to updatedDays
     const updatedDays = prev.days.map(day => {
@@ -33,16 +24,61 @@ export default function useApplicationData() {
       };
     });
 
+    //Determine whether and how spot count needs to change
+    let increment = 0;
+    const interviewExisted = prev.appointments[id].interview !== null;
+    if (interview !== null && !interviewExisted) {
+      //Book and interview in a previously empty spot: subtract a spot
+      increment = -1;
+    } else if (interviewExisted && interview === null) {
+      //Delete an interview from a previously filled spot: add a spot
+      increment = +1;
+    }
+
     //Get the day object for the name passed in day
     const targetDay = updatedDays.find(d => d.name === day);
 
-    //Modify spots property directly (as targetDay is already a clone)
+    //Apply new spot count directly (as targetDay is already a clone)
     targetDay.spots += increment;
+    
 
-    return {...prev, days: updatedDays};
+    /**
+     * Update the interview data for the appointment
+     */
+
+    const updatedAppointment = {
+      ...prev.appointments[id],
+      interview,
+    }
+
+    const updatedAppointments = {
+      ...prev.appointments,
+      [id]: updatedAppointment,
+    }
+
+    /**
+     * Update state
+     */
+
+    const updatedState = {
+      ...prev,
+      appointments: updatedAppointments,
+      days: updatedDays,
+    }
+
+    return updatedState;
 
   });
 
+  /**
+   * Changes the day string in the state so the view can show the given day
+   * @param {String} day the day to be shown (e.g. "Monday")
+   */
+  const setDay = (day) => setState(prev => {
+    return {...prev, day};
+  });
+
+  
   /**
    * Makes an API call to book an interviewer
    * @param {Integer} id the id of the appointment to book the interview for
@@ -50,35 +86,12 @@ export default function useApplicationData() {
    * @returns a promise to the completed API call
    */
    const bookInterview = (id, interview) => {
-    return new Promise ((resolve, reject) => {      
-
-      //Determine whether we're updating or creating the interview (to keep track of open spots)
-      const interviewExisted = state.appointments[id].interview !== null;
-
-      const appointment = {
-        ...state.appointments[id],
-        interview: { ...interview }
-      };
-  
-      const appointments = {
-        ...state.appointments,
-        [id]: appointment
-      }
-  
-      const updatedState = {
-        ...state,
-        appointments
-      }
-  
+    return new Promise ((resolve, reject) => {        
       axios
         .put(`/api/appointments/${id}`, { interview })
         .then(response => {
           if (response.status === 204) {
-            setState(updatedState);
-            if (!interviewExisted) {
-              //Subtract a spot since this interview didn't exist before
-              adjustSpots(state.day, -1);
-            }
+            synchronizeAppointment(id, interview, state.day);
             resolve();  
           } else { 
             reject(new Error(`Invalid response received from API. Expected 204 and received ${response.status}.`));
@@ -94,36 +107,18 @@ export default function useApplicationData() {
    * @returns a promise to the completed API call
    */
   const cancelInterview = id => {
-    return new Promise((resolve, reject) => {
-
-      const updatedAppointment = {
-        ...state.appointments[id],
-        interview: null,
-      }
-  
-      const updatedAppointments = {
-        ...state.appointments,
-        [id]: updatedAppointment,
-      }
-  
-      const updatedState = {
-        ...state,
-        appointments: { ...updatedAppointments },
-      }
-  
+    return new Promise((resolve, reject) => {  
       axios
         .delete(`/api/appointments/${id}`)
         .then(response => {
           if (response.status === 204) {
-            setState(updatedState);
-            adjustSpots(state.day, 1);
+            synchronizeAppointment(id, null, state.day);
             resolve();  
           } else {
             reject(new Error(`Invalid response received from API. Expected 204 and received ${response.status}.`));
           }
         })
-        .catch(reject);
-  
+        .catch(reject);  
     });
   };
 
