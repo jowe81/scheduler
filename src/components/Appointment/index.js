@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import "./styles.scss";
 import Header from "./Header";
 import Show from "./Show";
@@ -23,6 +23,11 @@ const Appointment = (props) => {
   const ERROR_DELETE = "An error occurred while trying to cancel the appointment.";
 
   const { mode, transition, back } = useVisualMode(props.interview ? SHOW : EMPTY);
+
+  //When interview data changes, transition the component as needed
+  useEffect(() => {
+    props.interview ? transition(SHOW) : transition(EMPTY);
+  }, [props.interview]);
 
   const save = (name, interviewer) => {
     transition(SAVING);
@@ -57,8 +62,30 @@ const Appointment = (props) => {
   return (
     <article className="appointment">
       <Header time={props.time}/>
-      {mode === EMPTY && <Empty onAdd={() => transition(CREATE)} />}
-      {mode === SHOW && (
+      {
+        /*
+        The second condition in the section below (EMPTY mode) prevents a visual glitch 
+        on a connected browser when deleting an interview.
+        
+        The glitch is prompted because the transition from SHOW to EMPTY triggered in the side effect
+        only occurs AFTER the component renders with the new prop data (that is, with a null-value for the interview).        
+        So, at the time it receives the new prop (no interview), the component is still in SHOW mode.
+        
+        For SHOW mode, the added condition "&& props.interview" ensures we don't get a reference error, but it also means that 
+        at this point none of the rendering conditions apply and hence nothing gets rendered.
+        As a result the container collapses briefly, until the component rerenders in EMPTY mode after the transition.
+
+        One way to avoid the momentary collapse of the container is to render the EMPTY component even if we are in fact
+        in SHOW mode but do not have interview data. This is the workaround I'm applying here
+
+        A better way would arguably be to effect the transition to EMPTY mode BEFORE re-rendering in the first place,
+        but that seems beyond the scope of the exercise...
+        */
+      }
+      {(mode === EMPTY || (mode === SHOW && !props.interview)) && 
+        <Empty onAdd={() => transition(CREATE)} />
+      }
+      {mode === SHOW && props.interview && (
         <Show
           student={props.interview.student}
           interviewer={props.interview.interviewer}
