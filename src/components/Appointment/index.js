@@ -26,8 +26,13 @@ const Appointment = (props) => {
 
   //When interview data changes, transition the component as needed
   useEffect(() => {
-    props.interview ? transition(SHOW) : transition(EMPTY);
-  }, [props.interview]);
+    if (props.interview && mode === EMPTY) {
+     transition(SHOW);
+    }
+    if (props.interview === null && mode === SHOW) {
+     transition(EMPTY);
+    }
+   }, [props.interview, transition, mode]);
 
   const save = (name, interviewer) => {
     transition(SAVING);
