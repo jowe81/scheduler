@@ -105,7 +105,10 @@ export default function useApplicationData() {
         .put(`/api/appointments/${id}`, { interview })
         .then(response => {
           if (response.status === 204) {
-            synchronizeAppointment(id, interview);
+            //Only update state here if we don't have a socket connection triggering a state update (maybe this is unnecessary)
+            if (!state.socketConnection) {
+              synchronizeAppointment(id, interview);
+            }
             resolve();  
           } else { 
             reject(new Error(`Invalid response received from API. Expected 204 and received ${response.status}.`));
@@ -126,7 +129,10 @@ export default function useApplicationData() {
         .delete(`/api/appointments/${id}`)
         .then(response => {
           if (response.status === 204) {
-            synchronizeAppointment(id, null);
+            //Only update state here if we don't have a socket connection triggering a state update (maybe this is unnecessary)
+            if (!state.socketConnection) {
+              synchronizeAppointment(id, null);
+            }
             resolve();  
           } else {
             reject(new Error(`Invalid response received from API. Expected 204 and received ${response.status}.`));
@@ -150,6 +156,27 @@ export default function useApplicationData() {
     });
   }, []);
 
+  //Connect to socket server
+  useEffect(() => {
+    const socketURL = process.env.REACT_APP_WEBSOCKET_URL;
+    const socket = new WebSocket(socketURL);
+    socket.onopen = event => {
+      setState(prev => ({ ...prev, socketConnection: true }));
+    }
+    socket.onclose = event => {
+      setState(prev => ({ ...prev, socketConnection: false }));
+    }
+    socket.onerror = event => {
+      console.log(`Error: Socket connection to ${socketURL} failed`, event);
+    }
+    socket.onmessage = event => {
+      const msg = JSON.parse(event.data);
+      if (msg.type === "SET_INTERVIEW") {
+        //Received interview data - update state
+        synchronizeAppointment(msg.id, msg.interview);
+      }
+    }    
+  }, []);
 
   return {
     state,
