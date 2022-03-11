@@ -38,8 +38,8 @@ const reducer = (state, action) => {
       increment = +1;
     }
 
-    //Get the day object
-    const targetDay = updatedDays.find(d => d.name === prev.day);
+    //Get the day object that the appointment belongs to    
+    const targetDay = updatedDays.find(d => d.appointments.includes(appointmentId));
 
     //Apply new spot count directly (as targetDay is already a clone)
     targetDay.spots += increment;
