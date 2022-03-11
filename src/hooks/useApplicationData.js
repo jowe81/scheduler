@@ -1,97 +1,17 @@
-import { useState, useEffect } from "react";
+import { useReducer, useEffect } from "react";
 import axios from "axios";
+import { reducer, actions } from "../reducer";
 
 export default function useApplicationData() {
 
-  const [state, setState] = useState({
+  const initialState = {    
     day: "Monday",
     days: [],
-    appointments: {}
-  });
-
-  /**
-   * Clone the days data and update spot count according to passed interview data
-   * @param {integer} appointmentId 
-   * @param {object | null} interview Interview object or null
-   * @param {object} prev Previous state 
-   * @returns a clone of prev.days, with updated spot count for day
-   */
-  const updateDays = (appointmentId, interview, prev) => {
-
-    //Clone the prev.days array to updatedDays
-    const updatedDays = prev.days.map(day => {
-      return {
-        ...day,
-        appointments: [ ...day.appointments ],
-        interviewers: [ ...day.interviewers ],
-      };
-    });
-
-    //Determine whether and how spot count needs to change
-    let increment = 0;
-    const interviewExisted = prev.appointments[appointmentId].interview !== null;
-    if (interview !== null && !interviewExisted) {
-      //Book and interview in a previously empty spot: subtract a spot
-      increment = -1;
-    } else if (interviewExisted && interview === null) {
-      //Delete an interview from a previously filled spot: add a spot
-      increment = +1;
-    }
-
-    //Get the day object
-    const targetDay = updatedDays.find(d => d.name === prev.day);
-
-    //Apply new spot count directly (as targetDay is already a clone)
-    targetDay.spots += increment;
-    
-    return updatedDays;
+    appointments: {},
+    socketConnection: false,
   }
 
-  /**
-   * Clone and update prev.appointments according to passed interview data
-   * @param {integer} appointmentId 
-   * @param {*} interview 
-   * @param {*} prev 
-   * @returns 
-   */
-  const updateAppointments = (appointmentId, interview, prev) => {
-    
-    const updatedAppointment = {
-      ...prev.appointments[appointmentId],
-      interview,
-    }
-
-    const updatedAppointments = {
-      ...prev.appointments,
-      [appointmentId]: updatedAppointment,
-    }
-
-    return updatedAppointments;
-  }
-
-  /**
-   * Update app state for booked, changed, or canceled appointment
-   * @param {integer} id The appointment id 
-   * @param {object | null} interview the new interview data (or null) for the appointment
-   */
-  const synchronizeAppointment = (id, interview) => setState(prev => {
-    const updatedDays = updateDays(id, interview, prev);
-    const updatedAppointments = updateAppointments(id, interview, prev);
-    const updatedState = {
-      ...prev,
-      appointments: updatedAppointments,
-      days: updatedDays,
-    }
-    return updatedState;
-  });
-
-  /**
-   * Changes the day string in the state so the view can show the given day
-   * @param {String} day the day to be shown (e.g. "Monday")
-   */
-  const setDay = (day) => setState(prev => {
-    return {...prev, day};
-  });
+  const [state, dispatch] = useReducer(reducer, initialState);
   
   /**
    * Makes an API call to book an interviewer
@@ -107,7 +27,11 @@ export default function useApplicationData() {
           if (response.status === 204) {
             //Only update state here if we don't have a socket connection triggering a state update (maybe this is unnecessary)
             if (!state.socketConnection) {
-              synchronizeAppointment(id, interview);
+              dispatch({
+                type: actions.SET_INTERVIEW,
+                appointmentId: id,
+                value: interview,
+              });
             }
             resolve();  
           } else { 
@@ -131,7 +55,11 @@ export default function useApplicationData() {
           if (response.status === 204) {
             //Only update state here if we don't have a socket connection triggering a state update (maybe this is unnecessary)
             if (!state.socketConnection) {
-              synchronizeAppointment(id, null);
+              dispatch({
+                type: actions.SET_INTERVIEW,
+                appointmentId: id,
+                value: null,
+              });
             }
             resolve();  
           } else {
@@ -141,6 +69,13 @@ export default function useApplicationData() {
         .catch(reject);  
     });
   };
+
+  const setDay = day => {
+    dispatch({
+      type: actions.SET_DAY,
+      value: { day },
+    })
+  }
 
   // Retrieve initial app data from API 
   useEffect(() => {
@@ -152,7 +87,10 @@ export default function useApplicationData() {
       const days = all[0].data;
       const appointments = all[1].data;
       const interviewers = all[2].data;
-      setState(prev => ({ ...prev, days, appointments, interviewers }));
+      dispatch({
+        type: actions.SET_APPLICATION_DATA,
+        value: { days, appointments, interviewers},
+      });
     });
   }, []);
 
@@ -161,10 +99,16 @@ export default function useApplicationData() {
     const socketURL = process.env.REACT_APP_WEBSOCKET_URL;
     const socket = new WebSocket(socketURL);
     socket.onopen = event => {
-      setState(prev => ({ ...prev, socketConnection: true }));
+      dispatch({
+        type: actions.SET_SOCKET_CONN_STATUS,
+        value: { socketConnection: true },
+      });
     }
     socket.onclose = event => {
-      setState(prev => ({ ...prev, socketConnection: false }));
+      dispatch({
+        type: actions.SET_SOCKET_CONN_STATUS,
+        value: { socketConnection: false },
+      });
     }
     socket.onerror = event => {
       console.log(`Error: Socket connection to ${socketURL} failed`, event);
@@ -173,7 +117,11 @@ export default function useApplicationData() {
       const msg = JSON.parse(event.data);
       if (msg.type === "SET_INTERVIEW") {
         //Received interview data - update state
-        synchronizeAppointment(msg.id, msg.interview);
+        dispatch({
+          type: actions.SET_INTERVIEW,
+          appointmentId: msg.id,
+          value: msg.interview,
+        });
       }
     }    
   }, []);
