@@ -21,6 +21,7 @@ const Appointment = (props) => {
   const EDIT = "EDIT";
   const ERROR_SAVE = "An error occurred while trying to save the appointment data.";
   const ERROR_DELETE = "An error occurred while trying to cancel the appointment.";
+  const ERROR_VERIFY = "Insufficient data: please type a student name and select an interviewer.";
 
   const { mode, transition, back } = useVisualMode(props.interview ? SHOW : EMPTY);
 
@@ -35,17 +36,22 @@ const Appointment = (props) => {
    }, [props.interview, transition, mode]);
 
   const save = (name, interviewer) => {
-    transition(SAVING);
-    const interview = {
-      student: name,
-      interviewer
-    };
-    props.bookInterview(props.id, interview)
-      .then(() => transition(SHOW))
-      .catch(err => {
-        transition(ERROR_SAVE, true);
-        console.log(`API call failed on save: ${err}`);
-      });
+    if (name && interviewer) {
+      transition(SAVING);
+      const interview = {
+        student: name,
+        interviewer
+      };
+      props.bookInterview(props.id, interview)
+        .then(() => transition(SHOW))
+        .catch(err => {
+          transition(ERROR_SAVE, true);
+          console.log(`API call failed on save: ${err}`);
+        });  
+    } else {
+      //Reject incomplete form data. (Unfortunately this also resets the form to previous state)
+      transition(ERROR_VERIFY);
+    }
   }
 
   const confirmCancellation = () => {
@@ -126,7 +132,7 @@ const Appointment = (props) => {
           onSave={save}
         />
       }
-      {(mode === ERROR_SAVE || mode === ERROR_DELETE) &&
+      {(mode.substr(0,5) === ERROR_SAVE || mode === ERROR_DELETE || mode === ERROR_VERIFY) &&
         <Error
           message={mode}
           onClose={back}
