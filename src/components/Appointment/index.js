@@ -132,7 +132,7 @@ const Appointment = (props) => {
           onSave={save}
         />
       }
-      {(mode.substr(0,5) === ERROR_SAVE || mode === ERROR_DELETE || mode === ERROR_VERIFY) &&
+      {[ERROR_SAVE, ERROR_DELETE, ERROR_VERIFY].includes(mode) &&
         <Error
           message={mode}
           onClose={back}
