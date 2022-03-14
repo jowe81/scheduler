@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import "./styles.scss";
 import Header from "./Header";
 import Show from "./Show";
@@ -25,6 +25,10 @@ const Appointment = (props) => {
 
   const { mode, transition, back } = useVisualMode(props.interview ? SHOW : EMPTY);
 
+  //Below state variables to retain form data temporarily
+  const [ tempState, setTempState ] = useState(null);
+  const [ useTempState, setUseTempState ] = useState(false);
+
   //When interview data changes, transition the component as needed
   useEffect(() => {
     if (props.interview && mode === EMPTY) {
@@ -35,7 +39,17 @@ const Appointment = (props) => {
     }
    }, [props.interview, transition, mode]);
 
+  //Discard form data changes (after hitting cancel) and go back
+  const discardAndGoBack = () => {
+    setUseTempState(false); //do not retain changes on form
+    back();
+  }
+
   const save = (name, interviewer) => {
+    //Store form data in case we need to go back (after failed save or failed verify)
+    setTempState({name, interviewer});
+    setUseTempState(false);
+    //Proceed to save if form data is complete
     if (name && interviewer) {
       transition(SAVING);
       const interview = {
@@ -45,11 +59,13 @@ const Appointment = (props) => {
       props.bookInterview(props.id, interview)
         .then(() => transition(SHOW))
         .catch(err => {
+          setUseTempState(true);
           transition(ERROR_SAVE, true);
           console.log(`API call failed on save: ${err}`);
         });  
     } else {
-      //Reject incomplete form data. (Unfortunately this also resets the form to previous state)
+      //Reject incomplete form data      
+      setUseTempState(true); //retain input values after displaying the error
       transition(ERROR_VERIFY);
     }
   }
@@ -107,7 +123,9 @@ const Appointment = (props) => {
       {mode === CREATE && 
         <Form 
           interviewers = {props.interviewers}
-          onCancel = {back}
+          student={useTempState && tempState.name}
+          interviewer={useTempState && tempState.interviewer}
+          onCancel = {discardAndGoBack}
           onSave = {save}
         />
       }
@@ -126,9 +144,9 @@ const Appointment = (props) => {
       {mode === EDIT &&
         <Form
           interviewers={props.interviewers}
-          student={props.interview.student}
-          interviewer={props.interview.interviewer.id}
-          onCancel={back}
+          student={useTempState ? tempState.name : props.interview.student}
+          interviewer={useTempState ? tempState.interviewer : props.interview.interviewer.id}
+          onCancel={discardAndGoBack}
           onSave={save}
         />
       }
