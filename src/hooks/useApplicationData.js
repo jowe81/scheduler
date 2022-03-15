@@ -95,35 +95,42 @@ export default function useApplicationData() {
   }, []);
 
   //Connect to socket server
-  useEffect(() => {
+  useEffect(() => {    
     const socketURL = process.env.REACT_APP_WEBSOCKET_URL;
-    const socket = new WebSocket(socketURL);
-    socket.onopen = event => {
-      dispatch({
-        type: actions.SET_SOCKET_CONN_STATUS,
-        value: { socketConnection: true },
-      });
-    }
-    socket.onclose = event => {
+    if (!socketURL) {
       dispatch({
         type: actions.SET_SOCKET_CONN_STATUS,
         value: { socketConnection: false },
-      });
-    }
-    socket.onerror = event => {
-      console.log(`Error: Socket connection to ${socketURL} failed`, event);
-    }
-    socket.onmessage = event => {
-      const msg = JSON.parse(event.data);
-      if (msg.type === "SET_INTERVIEW") {
-        //Received interview data - update state
+      });      
+    } else {
+      const socket = new WebSocket(socketURL);
+      socket.onopen = event => {
         dispatch({
-          type: actions.SET_INTERVIEW,
-          appointmentId: msg.id,
-          value: msg.interview,
+          type: actions.SET_SOCKET_CONN_STATUS,
+          value: { socketConnection: true },
         });
       }
-    }    
+      socket.onclose = event => {
+        dispatch({
+          type: actions.SET_SOCKET_CONN_STATUS,
+          value: { socketConnection: false },
+        });
+      }
+      socket.onerror = event => {
+        console.log(`Error: Socket connection to ${socketURL} failed`, event);
+      }
+      socket.onmessage = event => {
+        const msg = JSON.parse(event.data);
+        if (msg.type === "SET_INTERVIEW") {
+          //Received interview data - update state
+          dispatch({
+            type: actions.SET_INTERVIEW,
+            appointmentId: msg.id,
+            value: msg.interview,
+          });
+        }
+      }      
+    }
   }, []);
 
   return {
