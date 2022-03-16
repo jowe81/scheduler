@@ -5,7 +5,7 @@ import InterviewerList from "components/InterviewerList";
 export default function Form(props) {
   const [ student, setStudent ] = useState(props.student || "");
   const [ interviewer, setInterviewer ] = useState(props.interviewer || null);
-
+  const [ error, setError ] = useState("");
 
   const reset = function() {
     setStudent("");
@@ -18,9 +18,14 @@ export default function Form(props) {
   }
 
   const save = function() {
-    props.onSave(student, interviewer);
+    if (student === "") {
+      setError("Student name cannot be blank");
+    } else {
+      setError("");
+      props.onSave(student, interviewer);
+    }
   }
-
+  
   return (
     <main className="appointment__card appointment__card--create">
       <section className="appointment__card-left">
@@ -30,6 +35,7 @@ export default function Form(props) {
             name="name"
             type="text"
             placeholder="Enter Student Name"
+            data-testid="student-name-input"
             /*
               This must be a controlled component
               your code goes here
@@ -38,6 +44,7 @@ export default function Form(props) {
             onChange={(e) => setStudent(e.target.value)}            
           />
         </form>
+        <section className="appointment__validation">{error}</section>        
         <InterviewerList 
           /* your code goes here */
           interviewers={props.interviewers}
