@@ -14,6 +14,7 @@ import {
   getByLabelText, 
   getByPlaceholderText, 
   findByText,
+  findAllByTestId,
   getByDisplayValue
 } from "@testing-library/react";
 
@@ -121,35 +122,56 @@ describe("Application", () => {
     expect(getByText(monday, "1 spot remaining")).toBeInTheDocument();
   });
 
-});
-
-it("shows the save error when failing to save an appointment", async() => {
-  //Render the application
-  const { container } = render(<Application />);
-  //Wait for data to load
-  await waitForElement(() => getByText(container, "Archie Cohen"));
-  //Grab an empty appointment
-  const appointments = getAllByTestId(container, "appointment");
-  const appointment = appointments.find(appointment => queryByAltText(appointment, /add/i));
-  //Click add button
-  const addButton = getByAltText(appointment, /add/i);
-  fireEvent.click(addButton);
-  //Type name
-  const input = getByPlaceholderText(appointment, /enter student name/i);
-  fireEvent.change(input, {
-    target: { value: "Mark Smith"}
+  it("shows the save error when failing to save an appointment", async() => {
+    //Render the application
+    const { container } = render(<Application />);
+    //Wait for data to load
+    await waitForElement(() => getByText(container, "Archie Cohen"));
+    //Grab an empty appointment
+    const appointments = getAllByTestId(container, "appointment");
+    const appointment = appointments.find(appointment => queryByAltText(appointment, /add/i));
+    //Click add button
+    const addButton = getByAltText(appointment, /add/i);
+    fireEvent.click(addButton);
+    //Type name
+    const input = getByPlaceholderText(appointment, /enter student name/i);
+    fireEvent.change(input, {
+      target: { value: "Mark Smith"}
+    });
+    //Get and select an interviewer
+    const interviewers = getAllByTestId(container, "interviewer");
+    const interviewer = interviewers[0];
+    fireEvent.click(interviewer);
+    //Attempt save
+    axios.put.mockRejectedValueOnce(new Error("Could not store interview record"));
+    fireEvent.click(getByText(appointment, /save/i));
+    //Wait for error dialogue
+    await findByText(appointment, /error occurred/i);
+    //Click close on the error
+    fireEvent.click(getByAltText(appointment, /close/i));
+    //Confirm that edit form is back, with the previously entered name retained
+    expect(getByDisplayValue(appointment, "Mark Smith")).toBeInTheDocument();
   });
-  //Get and select an interviewer
-  const interviewers = getAllByTestId(container, "interviewer");
-  const interviewer = interviewers[0];
-  fireEvent.click(interviewer);
-  //Attempt save
-  axios.put.mockRejectedValueOnce(new Error("Could not store interview record"));
-  fireEvent.click(getByText(appointment, /save/i));
-  //Wait for error dialogue
-  await findByText(appointment, /error occurred/i);
-  //Click close on the error
-  fireEvent.click(getByAltText(appointment, /close/i));
-  //Confirm that edit form is back, with the previously entered name retained
-  expect(getByDisplayValue(appointment, "Mark Smith")).toBeInTheDocument();
+
+  it("shows the delete error when failing to delete an appointment", async() => {
+    //Render the application
+    const { container } = render(<Application />);
+    //Wait until the text "Archie Cohen" is displayed.
+    await waitForElement(() => getByText(container, "Archie Cohen"));    
+    //Grab Archie Cohen appointment
+    const appointments = getAllByTestId(container, "appointment");
+    const appointment = appointments.find(appointment => queryByText(appointment, "Archie Cohen"));        
+    //Grab and click delete button
+    const deleteButton = getByAltText(appointment, /delete/i);
+    fireEvent.click(deleteButton);
+    //Click confirm on error dialogue
+    axios.delete.mockRejectedValueOnce(new Error("Could not remove interview record"));
+    fireEvent.click(getByText(appointment, /confirm/i));
+    //Wait for error dialogue
+    await findByText(appointment, /error occurred/i);
+    //Click close on the error
+    fireEvent.click(getByAltText(appointment, /close/i));
+    //Confirm that appointment is back (show mode)
+    expect(getByText(appointment, "Archie Cohen")).toBeInTheDocument();
+  });
 });
