@@ -1,6 +1,6 @@
 import { useReducer, useEffect } from "react";
 import axios from "axios";
-import { reducer, actions } from "../reducer";
+import { reducer, actions } from "../reducers/application";
 
 export default function useApplicationData() {
 
